@@ -2,7 +2,7 @@
 
 ## Structure
 * SvelteKit for the front end (w/ Typescript)
-* Tauri as an option backend, to run as a native app
+* Tauri as an optional backend, to run as a native app
 * BabylonJS for 3D rendering
 
 ## To Run as a developer
