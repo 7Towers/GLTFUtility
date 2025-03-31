@@ -1,156 +1,98 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
+    import { Button } from 'flowbite-svelte';
+    import { onMount } from 'svelte';
+    import type {IGLTF} from "@babylonjs/loaders/glTF/2.0";
+    import {sortGLTF} from "$lib/GLTFFunctions";
+    import RenderView from "$lib/RenderView.svelte";
+    import {loadGLTF} from "$lib/renderer";
+    import {downloadSortedGLTF} from "$lib/GLTFFunctions";
 
-  let name = $state("");
-  let greetMsg = $state("");
+    let fileInput: HTMLInputElement;
+    let gltfUrl: string = '';
+    let gltfData: IGLTF | null = null;
+    let sorted = false;
 
-  async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
-  }
+    function handleFileSelect(event: Event) {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files.length > 0) {
+            const file = input.files[0];
+            if (file.name.includes('gltf')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target?.result as string;
+                    gltfData = JSON.parse(content);
+                    if (gltfData) {
+                        loadGLTF(gltfData);
+                    } else {
+                        alert('Failed to load GLTF file');
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Please select a valid .gltf file');
+            }
+        }
+    }
+
+    async function fetchGLTF() {
+        if (gltfUrl) {
+            try {
+                const response = await fetch(gltfUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const gltf: IGLTF = await response.json();
+                console.log('Fetched GLTF:', gltf);
+            } catch (error: any) {
+                alert('Failed to fetch GLTF file: ' + error.message);
+            }
+        } else {
+            alert('Please enter a valid URL');
+        }
+    }
+
+    onMount(() => {
+        fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.gltf';
+        fileInput.style.display = 'none';
+        fileInput.addEventListener('change', handleFileSelect);
+        document.body.appendChild(fileInput);
+    });
+
+    function openFileDialog() {
+        fileInput.click();
+    }
+
+    async function sortGLTFFile() {
+        if (gltfData) {
+            sortGLTF(gltfData);
+            sorted = true;
+        } else {
+            alert('No GLTF file to sort');
+        }
+    }
+
+    async function downloadGLTF() {
+        if (gltfData) {
+            downloadSortedGLTF(gltfData);
+        }
+    }
+
 </script>
 
-<main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
-
-  <div class="row">
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://kit.svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
-  </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
-
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
-</main>
-
-<style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
-  }
-
-  a:hover {
-    color: #24c8db;
-  }
-
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
-  }
-}
-
-</style>
+<div class="flex flex-col gap-5 m-5">
+    {#if gltfData}
+        <Button class="bg-green-700" on:click={sortGLTFFile}>Sort GLTF File</Button>
+        {#if sorted}
+            <Button on:click={downloadGLTF}>Download Sorted GLTF</Button>
+        {/if}
+    {:else}
+        <hr>
+        <Button on:click={openFileDialog}>Upload GLTF File</Button>
+<!--        <hr>-->
+<!--        <input type="text" bind:value={gltfUrl} placeholder="Enter GLTF file URL" class="p-2 border rounded" />-->
+<!--        <Button class="bg-blue-500" on:click={fetchGLTF}>Fetch GLTF File</Button>-->
+    {/if}
+    <RenderView/>
+</div>
