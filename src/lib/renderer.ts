@@ -1,10 +1,23 @@
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, Color4 } from '@babylonjs/core';
+import {
+    Engine,
+    Scene,
+    ArcRotateCamera,
+    HemisphericLight,
+    Vector3,
+    Color4,
+    type IDataBuffer,
+    AppendSceneAsync
+} from '@babylonjs/core';
 import '@babylonjs/loaders';
 import {GLTFFileLoader, type IGLTF} from "@babylonjs/loaders/glTF/2.0";
 import type {IGLTFLoaderData} from "@babylonjs/loaders";
+import {registerBuiltInLoaders} from "@babylonjs/loaders/dynamic";
+import '@babylonjs/loaders';
 
 let _engine: Engine | null;
 let _scene: Scene | null;
+
+registerBuiltInLoaders();
 
 export function setup(htmlCanvas: HTMLCanvasElement) {
     // Create the Babylon.js engine
@@ -61,5 +74,24 @@ export function shutdown() {
         _engine.dispose();
         _engine = null;
         _scene = null;
+    }
+}
+
+export async function loadGLBIntoScene(file: File): Promise<boolean> {
+    if (!_engine) {
+        console.error('Engine not initialized. Call setup() first.');
+        return false;
+    }
+
+    if (!_scene) {
+        console.error('Scene not found.');
+        return false;
+    }
+    try {
+       await AppendSceneAsync(file, _scene);
+       return true;
+    } catch (e: any) {
+        console.error('Error loading GLB model:', e);
+        return false;
     }
 }

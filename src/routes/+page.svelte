@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { Button } from 'flowbite-svelte';
-    import { onMount } from 'svelte';
+    import {Button} from 'flowbite-svelte';
+    import {onMount} from 'svelte';
     import type {IGLTF} from "@babylonjs/loaders/glTF/2.0";
-    import {sortGLTF} from "$lib/GLTFFunctions";
+    import {loadGLB, sortGLTF} from "$lib/GLTFFunctions";
     import RenderView from "$lib/RenderView.svelte";
     import {loadGLTF} from "$lib/renderer";
     import {downloadSortedGLTF} from "$lib/GLTFFunctions";
@@ -11,8 +11,9 @@
     let gltfUrl: string = '';
     let gltfData: IGLTF | null = null;
     let sorted = false;
+    let glbLoaded = false;
 
-    function handleFileSelect(event: Event) {
+    async function handleFileSelect(event: Event) {
         const input = event.target as HTMLInputElement;
         if (input.files && input.files.length > 0) {
             const file = input.files[0];
@@ -28,8 +29,10 @@
                     }
                 };
                 reader.readAsText(file);
+            } else if (file.name.includes('glb')) {
+                glbLoaded = await loadGLB(file);
             } else {
-                alert('Please select a valid .gltf file');
+                alert('Please select a valid .gltf or .glb file');
             }
         }
     }
@@ -54,7 +57,7 @@
     onMount(() => {
         fileInput = document.createElement('input');
         fileInput.type = 'file';
-        fileInput.accept = '.gltf';
+        fileInput.accept = '.gltf, .glb';
         fileInput.style.display = 'none';
         fileInput.addEventListener('change', handleFileSelect);
         document.body.appendChild(fileInput);
@@ -89,10 +92,10 @@
         {/if}
     {:else}
         <hr>
-        <Button on:click={openFileDialog}>Upload GLTF File</Button>
-<!--        <hr>-->
-<!--        <input type="text" bind:value={gltfUrl} placeholder="Enter GLTF file URL" class="p-2 border rounded" />-->
-<!--        <Button class="bg-blue-500" on:click={fetchGLTF}>Fetch GLTF File</Button>-->
+        <Button on:click={openFileDialog}>Upload GLTF / GLB File</Button>
+        <!--        <hr>-->
+        <!--        <input type="text" bind:value={gltfUrl} placeholder="Enter GLTF file URL" class="p-2 border rounded" />-->
+        <!--        <Button class="bg-blue-500" on:click={fetchGLTF}>Fetch GLTF File</Button>-->
     {/if}
     <RenderView/>
 </div>

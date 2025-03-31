@@ -1,4 +1,5 @@
-import type {IGLTF} from "@babylonjs/loaders/glTF/2.0";
+import {GLTFFileLoader, type IGLTF} from "@babylonjs/loaders/glTF/2.0";
+import {loadGLBIntoScene} from "$lib/renderer";
 
 export function sortGLTF(gltf: IGLTF): IGLTF {
     if (gltf.materials) {
@@ -41,4 +42,8 @@ export async function loadAndSortGLTF(inputUrl: string) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+export async function loadGLB(glbFile: File): Promise<boolean> {
+    return loadGLBIntoScene(glbFile);
 }
