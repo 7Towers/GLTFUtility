@@ -9,7 +9,8 @@ import {
     AppendSceneAsync,
     Mesh,
     Color3,
-    PBRMaterial
+    PBRMaterial,
+    PointerEventTypes, GPUPicker
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
 import {GLTFFileLoader, type IGLTF} from "@babylonjs/loaders/glTF/2.0";
@@ -17,15 +18,19 @@ import type {IGLTFLoaderData} from "@babylonjs/loaders";
 import {registerBuiltInLoaders} from "@babylonjs/loaders/dynamic";
 import '@babylonjs/loaders';
 import { GLTF2Export } from '@babylonjs/serializers';
+import {writable, type Writable} from "svelte/store";
 
 let _engine: Engine | null;
 let _scene: Scene | null;
 let _selectedMesh: Mesh | null = null;
-let colors: string[] = ['#ff0000', '#00ff00', '#0000ff']; // Default colors
+let _colors: string[] = ['#ff0000', '#00ff00', '#0000ff']; // Default colors
+
+export let selectedMeshStore = writable<Mesh | null>(null);
+export let colorsStore = writable<string[]>(['#ff0000', '#00ff00', '#0000ff']);
 
 registerBuiltInLoaders();
 
-export function setup(htmlCanvas: HTMLCanvasElement) {
+export function setup(htmlCanvas: HTMLCanvasElement): Scene {
     // Create the Babylon.js engine
     const engine = new Engine(htmlCanvas, true);
 
@@ -42,6 +47,27 @@ export function setup(htmlCanvas: HTMLCanvasElement) {
     // Create a hemispheric light
     const light = new HemisphericLight('light', new Vector3(1, 1, 0), scene);
 
+    scene.onPointerObservable.add((pointerInfo) => {
+        if (pointerInfo.type === PointerEventTypes.POINTERPICK) {
+            const pickResult = scene.pick(pointerInfo.event.clientX, pointerInfo.event.clientY, (mesh) => mesh.isPickable && mesh.isVisible,
+                false);
+            if (pickResult?.hit && pickResult.pickedMesh) {
+                if (_selectedMesh) {
+                    _selectedMesh.showBoundingBox = false; // Deselect previous mesh
+                }
+                _selectedMesh = pickResult.pickedMesh as Mesh;
+                selectedMeshStore.set(_selectedMesh);
+                _selectedMesh.showBoundingBox = true; // Highlight selected mesh
+            } else {
+                if (_selectedMesh) {
+                    _selectedMesh.showBoundingBox = false; // Deselect previous mesh
+                    _selectedMesh = null;
+                    selectedMeshStore.set(null);
+                }
+            }
+        }
+    });
+
     // Render loop
     engine.runRenderLoop(() => {
         scene.render();
@@ -54,6 +80,7 @@ export function setup(htmlCanvas: HTMLCanvasElement) {
 
     _engine = engine;
     _scene = scene;
+    return scene;
 }
 
 export function loadGLTF(gltf: IGLTF) {
@@ -108,8 +135,8 @@ export function applyMaterialVariants()  {
     const material = _selectedMesh.material.clone("cloned_material") as PBRMaterial;
     if (!material) return;
 
-    material.albedoColor = Color3.FromHexString(colors[0]);
-    material.emissiveColor = Color3.FromHexString(colors[2]);
+    material.albedoColor = Color3.FromHexString(_colors[0]);
+    material.emissiveColor = Color3.FromHexString(_colors[2]);
 
     _selectedMesh.material = material;
 }
