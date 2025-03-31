@@ -6,16 +6,22 @@ import {
     Vector3,
     Color4,
     type IDataBuffer,
-    AppendSceneAsync
+    AppendSceneAsync,
+    Mesh,
+    Color3,
+    PBRMaterial
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
 import {GLTFFileLoader, type IGLTF} from "@babylonjs/loaders/glTF/2.0";
 import type {IGLTFLoaderData} from "@babylonjs/loaders";
 import {registerBuiltInLoaders} from "@babylonjs/loaders/dynamic";
 import '@babylonjs/loaders';
+import { GLTF2Export } from '@babylonjs/serializers';
 
 let _engine: Engine | null;
 let _scene: Scene | null;
+let _selectedMesh: Mesh | null = null;
+let colors: string[] = ['#ff0000', '#00ff00', '#0000ff']; // Default colors
 
 registerBuiltInLoaders();
 
@@ -94,4 +100,30 @@ export async function loadGLBIntoScene(file: File): Promise<boolean> {
         console.error('Error loading GLB model:', e);
         return false;
     }
+}
+
+export function applyMaterialVariants()  {
+    if (!_selectedMesh || !_selectedMesh.material) return;
+
+    const material = _selectedMesh.material.clone("cloned_material") as PBRMaterial;
+    if (!material) return;
+
+    material.albedoColor = Color3.FromHexString(colors[0]);
+    material.emissiveColor = Color3.FromHexString(colors[2]);
+
+    _selectedMesh.material = material;
+}
+
+export async function exportGLBModel(){
+    if (!_scene) return;
+
+    const glbData = await GLTF2Export.GLBAsync(_scene, 'updated_model.glb');
+    glbData.downloadFiles();
+}
+
+export async function exportGLTFModel(){
+    if (!_scene) return;
+
+    const gltfData = await GLTF2Export.GLTFAsync(_scene, 'updated_model.gltf');
+    gltfData.downloadFiles();
 }

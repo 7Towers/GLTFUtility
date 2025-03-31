@@ -2,7 +2,7 @@
     import {Button} from 'flowbite-svelte';
     import {onMount} from 'svelte';
     import type {IGLTF} from "@babylonjs/loaders/glTF/2.0";
-    import {loadGLB, sortGLTF} from "$lib/GLTFFunctions";
+    import {uploadGLB, sortGLTF, downloadGLTF} from "$lib/GLTFFunctions";
     import RenderView from "$lib/RenderView.svelte";
     import {loadGLTF} from "$lib/renderer";
     import {downloadSortedGLTF} from "$lib/GLTFFunctions";
@@ -30,7 +30,7 @@
                 };
                 reader.readAsText(file);
             } else if (file.name.includes('glb')) {
-                glbLoaded = await loadGLB(file);
+                glbLoaded = await uploadGLB(file);
             } else {
                 alert('Please select a valid .gltf or .glb file');
             }
@@ -76,11 +76,6 @@
         }
     }
 
-    async function downloadGLTF() {
-        if (gltfData) {
-            downloadSortedGLTF(gltfData);
-        }
-    }
 
 </script>
 

@@ -1,5 +1,5 @@
 import {GLTFFileLoader, type IGLTF} from "@babylonjs/loaders/glTF/2.0";
-import {loadGLBIntoScene} from "$lib/renderer";
+import {exportGLTFModel, loadGLBIntoScene} from "$lib/renderer";
 
 export function sortGLTF(gltf: IGLTF): IGLTF {
     if (gltf.materials) {
@@ -14,6 +14,8 @@ export function sortGLTF(gltf: IGLTF): IGLTF {
     return gltf;
 }
 
+// this attempts to download a GLTF file, but errors out with a recursive error.
+// using another method, but perhaps we'll return to this later
 export function downloadSortedGLTF(gltfData: IGLTF) {
     if (gltfData) {
         const sortedGLTF = JSON.stringify(gltfData, null, 2);
@@ -44,6 +46,10 @@ export async function loadAndSortGLTF(inputUrl: string) {
     document.body.removeChild(a);
 }
 
-export async function loadGLB(glbFile: File): Promise<boolean> {
+export async function uploadGLB(glbFile: File): Promise<boolean> {
     return loadGLBIntoScene(glbFile);
+}
+
+export async function downloadGLTF() {
+    return exportGLTFModel();
 }
